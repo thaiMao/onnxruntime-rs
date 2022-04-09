@@ -39,16 +39,36 @@ fn run() -> Result<(), Error> {
         //       _not_ SqueezeNet 1.1 as downloaded by '.with_model_downloaded(ImageClassification::SqueezeNet)'
         //       Obtain it with:
         //          curl -LO "https://github.com/onnx/models/raw/master/vision/classification/squeezenet/model/squeezenet1.0-8.onnx"
-        .with_model_from_file("squeezenet1.0-8.onnx")?;
+        .with_model_from_file("pose_landmark_lite.onnx")?;
 
     let input0_shape: Vec<usize> = session.inputs[0].dimensions().map(|d| d.unwrap()).collect();
     let output0_shape: Vec<usize> = session.outputs[0]
         .dimensions()
         .map(|d| d.unwrap())
         .collect();
+    let output1_shape: Vec<usize> = session.outputs[1]
+        .dimensions()
+        .map(|d| d.unwrap())
+        .collect();
+    let output2_shape: Vec<usize> = session.outputs[2]
+        .dimensions()
+        .map(|d| d.unwrap())
+        .collect();
+    let output3_shape: Vec<usize> = session.outputs[3]
+        .dimensions()
+        .map(|d| d.unwrap())
+        .collect();
+    let output4_shape: Vec<usize> = session.outputs[4]
+        .dimensions()
+        .map(|d| d.unwrap())
+        .collect();
 
-    assert_eq!(input0_shape, [1, 3, 224, 224]);
-    assert_eq!(output0_shape, [1, 1000, 1, 1]);
+    assert_eq!(input0_shape, [1, 3, 256, 256]);
+    assert_eq!(output0_shape, [1, 195]);
+    assert_eq!(output1_shape, [1, 1]);
+    assert_eq!(output2_shape, [1, 256, 256, 1]);
+    assert_eq!(output3_shape, [1, 64, 64, 39]);
+    assert_eq!(output4_shape, [1, 117]);
 
     // initialize input data with values in [0.0, 1.0]
     let n: u32 = session.inputs[0]
@@ -64,9 +84,10 @@ fn run() -> Result<(), Error> {
     let outputs: Vec<OrtOwnedTensor<f32, _>> = session.run(input_tensor_values)?;
 
     assert_eq!(outputs[0].shape(), output0_shape.as_slice());
-    for i in 0..5 {
-        println!("Score for class [{}] =  {}", i, outputs[0][[0, i, 0, 0]]);
-    }
+    assert_eq!(outputs[1].shape(), output1_shape.as_slice());
+    assert_eq!(outputs[2].shape(), output2_shape.as_slice());
+    assert_eq!(outputs[3].shape(), output3_shape.as_slice());
+    assert_eq!(outputs[4].shape(), output4_shape.as_slice());
 
     Ok(())
 }
