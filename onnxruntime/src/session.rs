@@ -306,6 +306,9 @@ pub struct Session<'a> {
     pub outputs: Vec<Output>,
 }
 
+unsafe impl<'a> Send for Session<'a> {}
+unsafe impl<'a> Sync for Session<'a> {}
+
 /// Information about an ONNX's input as stored in loaded file
 #[derive(Debug)]
 pub struct Input {
