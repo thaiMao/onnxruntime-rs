@@ -12101,6 +12101,7 @@ pub struct OrtStatus {
 pub struct OrtMemoryInfo {
     _unused: [u8; 0],
 }
+unsafe impl Send for OrtMemoryInfo {}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct OrtIoBinding {
@@ -12111,6 +12112,7 @@ pub struct OrtIoBinding {
 pub struct OrtSession {
     _unused: [u8; 0],
 }
+unsafe impl Send for OrtSession {}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct OrtValue {
@@ -12191,6 +12193,9 @@ pub struct OrtAllocator {
         unsafe extern "C" fn(this_: *const OrtAllocator) -> *const OrtMemoryInfo,
     >,
 }
+
+unsafe impl Send for OrtAllocator {}
+
 #[test]
 fn bindgen_test_layout_OrtAllocator() {
     assert_eq!(
