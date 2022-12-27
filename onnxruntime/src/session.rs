@@ -380,7 +380,7 @@ impl<'a> Session<'a> {
     /// used for the input data here.
     pub fn run<'s, 't, 'm, TIn, TOut, D>(
         &'s mut self,
-        input_arrays: Vec<Array<TIn, D>>,
+        input_array: Array<TIn, D>,
     ) -> Result<Vec<OrtOwnedTensor<'t, 'm, TOut, ndarray::IxDyn>>>
     where
         TIn: TypeToTensorElementDataType + Debug + Clone,
@@ -389,7 +389,7 @@ impl<'a> Session<'a> {
         'm: 't, // 'm outlives 't (memory info outlives tensor)
         's: 'm, // 's outlives 'm (session outlives memory info)
     {
-        self.validate_input_shapes(&input_arrays)?;
+        // self.validate_input_shapes(&input_arrays)?;
 
         // Build arguments to Run()
 
@@ -416,17 +416,10 @@ impl<'a> Session<'a> {
             vec![std::ptr::null_mut(); self.outputs.len()];
 
         // The C API expects pointers for the arrays (pointers to C-arrays)
-        let input_ort_tensors: Vec<OrtTensor<TIn, D>> = input_arrays
-            .into_iter()
-            .map(|input_array| {
-                OrtTensor::from_array(&self.memory_info, self.allocator_ptr, input_array)
-            })
-            .collect::<Result<Vec<OrtTensor<TIn, D>>>>()?;
-        let input_ort_values: Vec<*const sys::OrtValue> = input_ort_tensors
-            .iter()
-            .map(|input_array_ort| input_array_ort.c_ptr as *const sys::OrtValue)
-            .collect();
-
+        let input_ort_tensor: OrtTensor<TIn, D> =
+            OrtTensor::from_array(&self.memory_info, self.allocator_ptr, input_array)?;
+        let input_ort_value: *const sys::OrtValue = input_ort_tensor.c_ptr as *const sys::OrtValue;
+        let input_ort_value_len = 1;
         let run_options_ptr: *const sys::OrtRunOptions = std::ptr::null();
 
         let status = unsafe {
@@ -434,8 +427,8 @@ impl<'a> Session<'a> {
                 self.session_ptr,
                 run_options_ptr,
                 input_names_ptr.as_ptr(),
-                input_ort_values.as_ptr(),
-                input_ort_values.len(),
+                &input_ort_value,
+                input_ort_value_len,
                 output_names_ptr.as_ptr(),
                 output_names_ptr.len(),
                 output_tensor_extractors_ptrs.as_mut_ptr(),
